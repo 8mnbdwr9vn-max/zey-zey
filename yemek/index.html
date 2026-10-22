@@ -232,10 +232,11 @@
       padding-bottom: env(safe-area-inset-bottom);
       z-index: 10;
     }
-    nav button {
+    nav button, nav a {
       flex: 1;
       border: none;
       background: none;
+      text-decoration: none;
       padding: 10px 4px;
       font-size: 0.75rem;
       color: var(--soluk);
@@ -245,7 +246,7 @@
       align-items: center;
       gap: 2px;
     }
-    nav button span { font-size: 1.4rem; }
+    nav button span, nav a span { font-size: 1.4rem; }
     nav button.aktif { color: var(--koyu-turuncu); font-weight: 600; }
 
     .bildirim {
@@ -326,6 +327,7 @@
     <button data-sayfa="menu"><span>📅</span>Menü</button>
     <button data-sayfa="alisveris"><span>🛒</span>Alışveriş</button>
     <button data-sayfa="ipuclari"><span>💡</span>İpuçları</button>
+    <a href="forum.html"><span>💬</span>Forum</a>
   </nav>
 
   <script src="tarifler.js"></script>
@@ -619,6 +621,10 @@
     // ---------- Başlat ----------
     filtreleriCiz();
     tarifleriCiz();
+
+    // Forum sayfasından dönerken (ör. ./#menu) doğru sekmeyi aç
+    const ilkSayfa = location.hash.slice(1);
+    if (document.querySelector(`nav [data-sayfa="${ilkSayfa}"]`)) sayfaAc(ilkSayfa);
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js").catch(() => {});

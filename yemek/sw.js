@@ -1,9 +1,10 @@
 // İnternet yokken de açılabilsin diye dosyaları önbellekte tutar.
 // Dosyalar değişince SURUM'ü artır ki telefonlar yeni hâli alsın.
-const SURUM = "minik-sofra-v1";
+const SURUM = "minik-sofra-v2";
 const DOSYALAR = [
   "./",
   "index.html",
+  "forum.html",
   "tarifler.js",
   "manifest.json",
   "icon-192.png",
