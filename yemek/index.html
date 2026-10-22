@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Minik Sofra</title>
+  <meta name="description" content="1–5 yaş çocuklar için tarifler, haftalık menü ve alışveriş listesi">
+  <meta name="theme-color" content="#ff8a65">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Minik Sofra">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <style>
+    :root {
+      --turuncu: #ff8a65;
+      --koyu-turuncu: #e8643c;
+      --zemin: #fff8f3;
+      --kart: #ffffff;
+      --yazi: #3d2c29;
+      --soluk: #8a7470;
+      --cizgi: #f1e2da;
+      --yesil: #4caf7a;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--zemin);
+      color: var(--yazi);
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    header {
+      background: linear-gradient(135deg, #ff8a65, #ffb74d);
+      color: #fff;
+      padding: calc(20px + env(safe-area-inset-top)) 16px 20px;
+    }
+    header h1 { font-size: 1.6rem; }
+    header p { opacity: 0.9; margin-top: 4px; font-size: 0.95rem; }
+
+    main { padding: 16px; max-width: 720px; margin: 0 auto; }
+    .sayfa { display: none; }
+    .sayfa.aktif { display: block; }
+
+    h2 { font-size: 1.25rem; margin-bottom: 12px; }
+
+    /* Arama ve filtreler */
+    .arama {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--cizgi);
+      border-radius: 12px;
+      font-size: 1rem;
+      background: var(--kart);
+      color: var(--yazi);
+    }
+    .filtreler {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 0;
+      scrollbar-width: none;
+    }
+    .filtreler::-webkit-scrollbar { display: none; }
+    .cip {
+      flex-shrink: 0;
+      border: 1px solid var(--cizgi);
+      background: var(--kart);
+      color: var(--yazi);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .cip.secili { background: var(--turuncu); border-color: var(--turuncu); color: #fff; }
+
+    /* Tarif kartları */
+    .liste { display: grid; gap: 10px; }
+    .tarif-kart {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--kart);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(120, 60, 30, 0.06);
+      cursor: pointer;
+      border: none;
+      text-align: left;
+      width: 100%;
+      color: inherit;
+      font: inherit;
+    }
+    .tarif-emoji {
+      font-size: 1.8rem;
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: #fff1e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .tarif-bilgi { flex: 1; min-width: 0; }
+    .tarif-bilgi strong { display: block; font-size: 1rem; }
+    .tarif-bilgi span { font-size: 0.85rem; color: var(--soluk); }
+    .yildiz { font-size: 1.2rem; }
+    .bos { text-align: center; color: var(--soluk); padding: 24px 0; }
+
+    /* Tarif detayı */
+    .perde {
+      position: fixed;
+      inset: 0;
+      background: rgba(40, 20, 10, 0.45);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 20;
+    }
+    .perde.acik { display: flex; }
+    .detay {
+      background: var(--kart);
+      width: 100%;
+      max-width: 720px;
+      max-height: 88vh;
+      overflow-y: auto;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
+    }
+    .detay-ust { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .detay-ust h3 { flex: 1; font-size: 1.3rem; }
+    .kapat {
+      border: none;
+      background: #f5ebe6;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: var(--yazi);
+    }
+    .detay h4 { margin: 16px 0 8px; color: var(--koyu-turuncu); }
+    .detay ul, .detay ol { padding-left: 20px; line-height: 1.6; }
+    .detay .not {
+      margin-top: 16px;
+      background: #fff6e0;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 0.95rem;
+    }
+    .dugmeler { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+    .dugme {
+      flex: 1;
+      min-width: 140px;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--turuncu);
+      color: #fff;
+    }
+    .dugme.ikincil { background: #f5ebe6; color: var(--yazi); }
+
+    /* Haftalık menü */
+    .gun {
+      background: var(--kart);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(120, 60, 30, 0.06);
+    }
+    .gun strong { display: block; margin-bottom: 8px; }
+    .ogun { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .ogun label { width: 72px; font-size: 0.85rem; color: var(--soluk); flex-shrink: 0; }
+    .ogun select {
+      flex: 1;
+      min-width: 0;
+      padding: 8px;
+      border: 1px solid var(--cizgi);
+      border-radius: 10px;
+      background: #fffdfb;
+      font-size: 0.95rem;
+      color: var(--yazi);
+    }
+
+    /* Alışveriş */
+    .alisveris-satir {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--kart);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .alisveris-satir input { width: 22px; height: 22px; accent-color: var(--yesil); flex-shrink: 0; }
+    .alisveris-satir div { flex: 1; min-width: 0; }
+    .alisveris-satir small { display: block; color: var(--soluk); }
+    .alisveris-satir.alindi strong { text-decoration: line-through; color: var(--soluk); }
+    .sil { border: none; background: none; font-size: 1.1rem; cursor: pointer; color: var(--soluk); }
+    .ekle-satir { display: flex; gap: 8px; margin: 12px 0; }
+    .ekle-satir .arama { flex: 1; }
+    .ekle-satir .dugme { flex: 0 0 auto; min-width: 0; padding: 12px 16px; }
+
+    /* İpuçları */
+    .ipucu {
+      background: var(--kart);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    .ipucu strong { display: block; margin-bottom: 6px; font-size: 1.05rem; }
+    .uyari { font-size: 0.85rem; color: var(--soluk); margin-top: 16px; line-height: 1.5; }
+    .aciklama { color: var(--soluk); font-size: 0.9rem; margin-bottom: 12px; line-height: 1.5; }
+
+    /* Alt menü */
+    nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--kart);
+      border-top: 1px solid var(--cizgi);
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 10;
+    }
+    nav button {
+      flex: 1;
+      border: none;
+      background: none;
+      padding: 10px 4px;
+      font-size: 0.75rem;
+      color: var(--soluk);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    nav button span { font-size: 1.4rem; }
+    nav button.aktif { color: var(--koyu-turuncu); font-weight: 600; }
+
+    .bildirim {
+      position: fixed;
+      left: 50%;
+      bottom: calc(90px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      background: var(--yazi);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 30;
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+    .bildirim.goster { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🥣 Minik Sofra</h1>
+    <p>1–5 yaş için kolay, sağlıklı tarifler</p>
+  </header>
+
+  <main>
+    <!-- Tarifler -->
+    <section id="tarifler" class="sayfa aktif">
+      <input id="arama" class="arama" type="search" placeholder="Tarif ya da malzeme ara (ör. havuç)">
+      <div id="filtreler" class="filtreler"></div>
+      <div id="tarif-listesi" class="liste"></div>
+    </section>
+
+    <!-- Haftalık menü -->
+    <section id="menu" class="sayfa">
+      <h2>Haftalık Menü</h2>
+      <p class="aciklama">Her öğün için bir tarif seç. Seçtiklerin alışveriş listesine kendiliğinden eklenir.</p>
+      <div class="dugmeler" style="margin: 0 0 12px">
+        <button class="dugme" id="rastgele">🎲 Rastgele doldur</button>
+        <button class="dugme ikincil" id="menu-temizle">Temizle</button>
+      </div>
+      <div id="gunler"></div>
+    </section>
+
+    <!-- Alışveriş listesi -->
+    <section id="alisveris" class="sayfa">
+      <h2>Alışveriş Listesi</h2>
+      <p class="aciklama">Haftalık menündeki tariflerin malzemeleri. Aldıklarını işaretle.</p>
+      <div class="ekle-satir">
+        <input id="yeni-urun" class="arama" type="text" placeholder="Listeye ekle (ör. bebek bezi)">
+        <button class="dugme" id="urun-ekle">Ekle</button>
+      </div>
+      <div id="alisveris-listesi"></div>
+      <div class="dugmeler">
+        <button class="dugme ikincil" id="isaretleri-temizle">İşaretleri kaldır</button>
+      </div>
+    </section>
+
+    <!-- İpuçları -->
+    <section id="ipuclari" class="sayfa">
+      <h2>Beslenme İpuçları</h2>
+      <div id="ipucu-listesi"></div>
+      <p class="uyari">Bu uygulamadaki bilgiler genel önerilerdir, doktor tavsiyesinin yerini tutmaz. Çocuğunun beslenmesiyle ilgili özel bir durum varsa çocuk doktoruna danış.</p>
+    </section>
+  </main>
+
+  <div id="perde" class="perde">
+    <div class="detay" id="detay" role="dialog" aria-modal="true"></div>
+  </div>
+
+  <div id="bildirim" class="bildirim"></div>
+
+  <nav>
+    <button class="aktif" data-sayfa="tarifler"><span>📖</span>Tarifler</button>
+    <button data-sayfa="menu"><span>📅</span>Menü</button>
+    <button data-sayfa="alisveris"><span>🛒</span>Alışveriş</button>
+    <button data-sayfa="ipuclari"><span>💡</span>İpuçları</button>
+  </nav>
+
+  <script src="tarifler.js"></script>
+  <script>
+    const GUNLER = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+    const OGUNLER = ["Kahvaltı", "Öğle", "Akşam"];
+    const KATEGORILER = ["Tümü", "Favoriler", "Kahvaltı", "Ana yemek", "Çorba", "Ara öğün"];
+    // Alışveriş listesine eklenmeyecek, evde hep olan şeyler
+    const EVDE_VAR = ["Su"];
+
+    // Kayıtlar sadece bu telefonda saklanır. Gizli sekmede saklanamayabilir.
+    function oku(anahtar, varsayilan) {
+      try {
+        const deger = localStorage.getItem(anahtar);
+        return deger ? JSON.parse(deger) : varsayilan;
+      } catch (e) {
+        return varsayilan;
+      }
+    }
+    function yaz(anahtar, deger) {
+      try { localStorage.setItem(anahtar, JSON.stringify(deger)); } catch (e) {}
+    }
+
+    let favoriler = oku("favoriler", []);
+    let menu = oku("menu", {});              // { "Pazartesi-Kahvaltı": "tarif-id" }
+    let alinanlar = oku("alinanlar", []);    // işaretlenen malzeme adları
+    let ekUrunler = oku("ekUrunler", []);    // elle eklenen ürünler
+    let seciliKategori = "Tümü";
+
+    const tarifBul = (id) => TARIFLER.find((t) => t.id === id);
+
+    function kacis(metin) {
+      return metin.replace(/[&<>"']/g, (h) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[h]));
+    }
+
+    function bildir(metin) {
+      const b = document.getElementById("bildirim");
+      b.textContent = metin;
+      b.classList.add("goster");
+      clearTimeout(bildir.zaman);
+      bildir.zaman = setTimeout(() => b.classList.remove("goster"), 1800);
+    }
+
+    // ---------- Sayfa geçişleri ----------
+    document.querySelectorAll("nav button").forEach((d) => {
+      d.addEventListener("click", () => sayfaAc(d.dataset.sayfa));
+    });
+
+    function sayfaAc(ad) {
+      document.querySelectorAll(".sayfa").forEach((s) => s.classList.toggle("aktif", s.id === ad));
+      document.querySelectorAll("nav button").forEach((d) => d.classList.toggle("aktif", d.dataset.sayfa === ad));
+      if (ad === "menu") menuCiz();
+      if (ad === "alisveris") alisverisCiz();
+      window.scrollTo(0, 0);
+    }
+
+    // ---------- Tarifler ----------
+    function filtreleriCiz() {
+      document.getElementById("filtreler").innerHTML = KATEGORILER.map((k) =>
+        `<button class="cip ${k === seciliKategori ? "secili" : ""}" data-kategori="${k}">${k === "Favoriler" ? "⭐ " : ""}${k}</button>`
+      ).join("");
+    }
+
+    document.getElementById("filtreler").addEventListener("click", (e) => {
+      const cip = e.target.closest(".cip");
+      if (!cip) return;
+      seciliKategori = cip.dataset.kategori;
+      filtreleriCiz();
+      tarifleriCiz();
+    });
+
+    document.getElementById("arama").addEventListener("input", tarifleriCiz);
+
+    function tarifleriCiz() {
+      const aranan = document.getElementById("arama").value.trim().toLocaleLowerCase("tr");
+      const sonuc = TARIFLER.filter((t) => {
+        if (seciliKategori === "Favoriler" && !favoriler.includes(t.id)) return false;
+        if (!["Tümü", "Favoriler"].includes(seciliKategori) && t.kategori !== seciliKategori) return false;
+        if (!aranan) return true;
+        const metin = (t.ad + " " + t.malzemeler.map((m) => m[0]).join(" ")).toLocaleLowerCase("tr");
+        return metin.includes(aranan);
+      });
+
+      const liste = document.getElementById("tarif-listesi");
+      if (!sonuc.length) {
+        liste.innerHTML = `<p class="bos">${seciliKategori === "Favoriler" && !aranan
+          ? "Henüz favorin yok. Beğendiğin tarifte ⭐ düğmesine dokun."
+          : "Bu aramaya uygun tarif bulunamadı."}</p>`;
+        return;
+      }
+      liste.innerHTML = sonuc.map((t) => `
+        <button class="tarif-kart" data-id="${t.id}">
+          <div class="tarif-emoji">${t.emoji}</div>
+          <div class="tarif-bilgi">
+            <strong>${t.ad}</strong>
+            <span>${t.kategori} · ${t.sure} dk</span>
+          </div>
+          ${favoriler.includes(t.id) ? '<span class="yildiz">⭐</span>' : ""}
+        </button>`).join("");
+    }
+
+    document.getElementById("tarif-listesi").addEventListener("click", (e) => {
+      const kart = e.target.closest(".tarif-kart");
+      if (kart) detayAc(kart.dataset.id);
+    });
+
+    function detayAc(id) {
+      const t = tarifBul(id);
+      const favori = favoriler.includes(id);
+      document.getElementById("detay").innerHTML = `
+        <div class="detay-ust">
+          <div class="tarif-emoji">${t.emoji}</div>
+          <h3>${t.ad}</h3>
+          <button class="kapat" aria-label="Kapat" data-islem="kapat">✕</button>
+        </div>
+        <span style="color: var(--soluk)">${t.kategori} · ${t.sure} dakika</span>
+        <h4>Malzemeler</h4>
+        <ul>${t.malzemeler.map((m) => `<li>${m[0]} – ${m[1]}</li>`).join("")}</ul>
+        <h4>Yapılışı</h4>
+        <ol>${t.adimlar.map((a) => `<li>${a}</li>`).join("")}</ol>
+        ${t.not ? `<div class="not">💡 ${t.not}</div>` : ""}
+        <div class="dugmeler">
+          <button class="dugme ${favori ? "ikincil" : ""}" data-islem="favori" data-id="${id}">
+            ${favori ? "Favorilerden çıkar" : "⭐ Favorilere ekle"}
+          </button>
+          <button class="dugme ikincil" data-islem="menuye" data-id="${id}">📅 Menüye ekle</button>
+        </div>`;
+      document.getElementById("perde").classList.add("acik");
+    }
+
+    function detayKapat() {
+      document.getElementById("perde").classList.remove("acik");
+    }
+
+    document.getElementById("perde").addEventListener("click", (e) => {
+      if (e.target.id === "perde") return detayKapat();
+      const d = e.target.closest("[data-islem]");
+      if (!d) return;
+      if (d.dataset.islem === "kapat") detayKapat();
+      if (d.dataset.islem === "favori") favoriDegistir(d.dataset.id);
+      if (d.dataset.islem === "menuye") menuyeEkle(d.dataset.id);
+    });
+
+    function favoriDegistir(id) {
+      favoriler = favoriler.includes(id) ? favoriler.filter((f) => f !== id) : [...favoriler, id];
+      yaz("favoriler", favoriler);
+      bildir(favoriler.includes(id) ? "Favorilere eklendi ⭐" : "Favorilerden çıkarıldı");
+      detayAc(id);
+      tarifleriCiz();
+    }
+
+    // Tarifi menüdeki ilk boş, uygun öğüne koyar
+    function menuyeEkle(id) {
+      const t = tarifBul(id);
+      const ogunler = t.kategori === "Kahvaltı" ? ["Kahvaltı"]
+        : t.kategori === "Ara öğün" ? OGUNLER
+        : ["Öğle", "Akşam"];
+      for (const gun of GUNLER) {
+        for (const ogun of ogunler) {
+          const anahtar = `${gun}-${ogun}`;
+          if (!menu[anahtar]) {
+            menu[anahtar] = id;
+            yaz("menu", menu);
+            bildir(`${gun} ${ogun.toLocaleLowerCase("tr")} öğününe eklendi`);
+            return;
+          }
+        }
+      }
+      bildir("Menüde uygun boş yer kalmadı");
+    }
+
+    // ---------- Haftalık menü ----------
+    function menuCiz() {
+      const secenekler = (secili) => `<option value="">— Seç —</option>` +
+        TARIFLER.map((t) => `<option value="${t.id}" ${t.id === secili ? "selected" : ""}>${t.emoji} ${t.ad}</option>`).join("");
+
+      document.getElementById("gunler").innerHTML = GUNLER.map((gun) => `
+        <div class="gun">
+          <strong>${gun}</strong>
+          ${OGUNLER.map((ogun) => `
+            <div class="ogun">
+              <label for="${gun}-${ogun}">${ogun}</label>
+              <select id="${gun}-${ogun}" data-anahtar="${gun}-${ogun}">${secenekler(menu[`${gun}-${ogun}`])}</select>
+            </div>`).join("")}
+        </div>`).join("");
+    }
+
+    document.getElementById("gunler").addEventListener("change", (e) => {
+      const anahtar = e.target.dataset.anahtar;
+      if (!anahtar) return;
+      if (e.target.value) menu[anahtar] = e.target.value;
+      else delete menu[anahtar];
+      yaz("menu", menu);
+    });
+
+    document.getElementById("rastgele").addEventListener("click", () => {
+      const kategoriden = (k) => TARIFLER.filter((t) => k.includes(t.kategori));
+      const rastgele = (dizi) => dizi[Math.floor(Math.random() * dizi.length)].id;
+      const kahvalti = kategoriden(["Kahvaltı"]);
+      const yemek = kategoriden(["Ana yemek", "Çorba"]);
+      GUNLER.forEach((gun) => {
+        menu[`${gun}-Kahvaltı`] = rastgele(kahvalti);
+        menu[`${gun}-Öğle`] = rastgele(yemek);
+        menu[`${gun}-Akşam`] = rastgele(yemek);
+      });
+      yaz("menu", menu);
+      menuCiz();
+      bildir("Haftalık menü hazır 🎉");
+    });
+
+    document.getElementById("menu-temizle").addEventListener("click", () => {
+      if (!confirm("Haftalık menü temizlensin mi?")) return;
+      menu = {};
+      yaz("menu", menu);
+      menuCiz();
+    });
+
+    // ---------- Alışveriş listesi ----------
+    function malzemeleriTopla() {
+      const toplam = new Map();
+      Object.values(menu).forEach((id) => {
+        const t = tarifBul(id);
+        if (!t) return;
+        t.malzemeler.forEach(([ad]) => {
+          if (EVDE_VAR.includes(ad)) return;
+          toplam.set(ad, (toplam.get(ad) || 0) + 1);
+        });
+      });
+      return [...toplam.entries()].sort((a, b) => a[0].localeCompare(b[0], "tr"));
+    }
+
+    function alisverisCiz() {
+      const malzemeler = malzemeleriTopla();
+      const satir = (ad, altyazi, sil) => `
+        <label class="alisveris-satir ${alinanlar.includes(ad) ? "alindi" : ""}">
+          <input type="checkbox" data-ad="${kacis(ad)}" ${alinanlar.includes(ad) ? "checked" : ""}>
+          <div><strong>${kacis(ad)}</strong>${altyazi ? `<small>${altyazi}</small>` : ""}</div>
+          ${sil ? `<button class="sil" data-sil="${kacis(ad)}" aria-label="Sil">🗑️</button>` : ""}
+        </label>`;
+
+      let html = ekUrunler.map((u) => satir(u, "", true)).join("");
+      html += malzemeler.map(([ad, sayi]) => satir(ad, `${sayi} öğünde kullanılıyor`, false)).join("");
+      document.getElementById("alisveris-listesi").innerHTML = html ||
+        `<p class="bos">Liste boş. Önce <b>Menü</b> sekmesinden tarif seç.</p>`;
+    }
+
+    document.getElementById("alisveris-listesi").addEventListener("change", (e) => {
+      const ad = e.target.dataset.ad;
+      if (!ad) return;
+      alinanlar = e.target.checked ? [...alinanlar, ad] : alinanlar.filter((a) => a !== ad);
+      yaz("alinanlar", alinanlar);
+      alisverisCiz();
+    });
+
+    document.getElementById("alisveris-listesi").addEventListener("click", (e) => {
+      const ad = e.target.dataset.sil;
+      if (!ad) return;
+      e.preventDefault();
+      ekUrunler = ekUrunler.filter((u) => u !== ad);
+      alinanlar = alinanlar.filter((a) => a !== ad);
+      yaz("ekUrunler", ekUrunler);
+      yaz("alinanlar", alinanlar);
+      alisverisCiz();
+    });
+
+    function urunEkle() {
+      const kutu = document.getElementById("yeni-urun");
+      const ad = kutu.value.trim();
+      if (!ad) return;
+      if (!ekUrunler.includes(ad)) ekUrunler.unshift(ad);
+      yaz("ekUrunler", ekUrunler);
+      kutu.value = "";
+      alisverisCiz();
+    }
+    document.getElementById("urun-ekle").addEventListener("click", urunEkle);
+    document.getElementById("yeni-urun").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") urunEkle();
+    });
+
+    document.getElementById("isaretleri-temizle").addEventListener("click", () => {
+      alinanlar = [];
+      yaz("alinanlar", alinanlar);
+      alisverisCiz();
+    });
+
+    // ---------- İpuçları ----------
+    document.getElementById("ipucu-listesi").innerHTML = IPUCLARI.map((i) => `
+      <div class="ipucu"><strong>${i.emoji} ${i.baslik}</strong>${i.metin}</div>`).join("");
+
+    // ---------- Başlat ----------
+    filtreleriCiz();
+    tarifleriCiz();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
